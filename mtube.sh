@@ -1,10 +1,27 @@
 #! /bin/bash
+function playVideo {
+	echo Preparing to play the video....
+	#but first we need to check that the link is valid
+	if [ "$(curl -s --head $1 | head -n 1 | grep "HTTP/1.[01] [23]..")" == "" ]; then
+		echo ERROR: Invalid Link
+	else
+		link_loc="$(youtube-dl -i $qual -g --cookies /tmp/cookie.txt "$1")"
+		if [ "$link_loc" == "" ]; then
+			echo mtube: The link you entered must be incorrect.
+		else
+			mplayer $other -cache $cache -cache-min $mincache -cookies -cookies-file /tmp/cookie.txt $link_loc 
+		fi
+	fi
+}
+
 finished="false"
 if [ "$1" == "" ]; then
-	echo "Either give the quality of the video(480, 720, 1080) followed by a link to a youtube video or enter update to update youtube-dl."
+	echo "Either give the quality of the video(480, 720, 1080) followed by a link to a youtube video, enter update to update youtube-dl, or enter 'loop' to play videos one after another."
+	finished="true"
 elif [ "$1" == "update" ]; then
 	echo Updating youtube-dl...
 	sudo youtube-dl -U
+	finished="true"
 fi
 #set the quality of the video
 qual="-f 18"
@@ -54,6 +71,33 @@ elif [ "$1" == "pl_download" ]; then
 	done
 
 other="-quiet"
+elif [ "$1" == "loop" ]; then
+	qual=""
+	cache=32768
+	mincache=50
+	finished="true"
+	oldurl=""
+	vidurl=""
+	while true
+	do
+		echo Please enter a youtube link, 
+		echo \'l\' to play the last url entered,
+		echo or \'q\' to leave the script.
+		echo -n "Input: "
+		read input
+		echo $'\n'
+		if [ "$input" == "q" ]; then
+			break;
+		fi
+		if [ "$input" == "l" ]; then
+			vidurl="$oldurl"
+		else
+			vidurl="$input"
+		fi
+		playVideo "$vidurl"
+		oldurl="$vidurl"
+	done
+
 fi
 #download and play the video
 if [ "$2" == "tut" ]; then
@@ -64,19 +108,9 @@ elif [ "$2" == "playlist" ]; then
 	plState=""
 	while true
 	do
-		#get url from playlist
-		vid_url="$(./ytube_playlist.sh $3)"
-		#but first we need to check that the url is valid
-		if [ "$(curl -s --head $vid_url | head -n 1 | grep "HTTP/1.[01] [23]..")" == "" ]; then
-			echo ERROR: Invalid Link
-		else
-			link_loc="$(youtube-dl -i $qual -g --cookies /tmp/cookie.txt "$vid_url")"
-			if [ "$link_loc" == "" ]; then
-				echo $0: The link you entered must be incorrect.
-			else
-				mplayer $other -cache $cache -cache-min $mincache -cookies -cookies-file /tmp/cookie.txt $link_loc 
-			fi
-		fi
+       		 #get url from playlist
+                vid_url="$(ytube_playlist.sh $3)"
+		playVideo $vid_url
 		echo Playlist Controls:  \(please enter one of the following\) 
 		echo c$'\t'play the current video
 		echo n$'\t'play the next video
@@ -117,17 +151,5 @@ elif [ "$2" == "playlist" ]; then
 		fi
 	done
 elif [ "$finished" != "true" ]; then
-	echo Preparing to play the video....
-	#but first we need to check that the link is valid
-	if [ "$(curl -s --head $2 | head -n 1 | grep "HTTP/1.[01] [23]..")" == "" ]; then
-		echo ERROR: Invalid Link
-	else
-		link_loc="$(youtube-dl -i $qual -g --cookies /tmp/cookie.txt "$2")"
-		if [ "$link_loc" == "" ]; then
-			echo $0: The link you entered must be incorrect.
-		else
-			mplayer $other -cache $cache -cache-min $mincache -cookies -cookies-file /tmp/cookie.txt $link_loc 
-		fi
-	fi
-
+	playVideo $2
 fi
