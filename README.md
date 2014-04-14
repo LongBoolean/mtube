@@ -3,12 +3,16 @@ mtube
 
 A simple Bash script for playing Youtube videos using mplayer.
 
+Update: Having issues with mplayer and youtube-dl now using vlc by default.
+
 
 Required packages:
     
     youtube-dl
     
     mplayer
+
+    vlc
     
     curl
 

@@ -1,4 +1,5 @@
 #! /bin/bash
+useVLC="true"
 function playVideo {
 	echo Preparing to play the video....
 	#but first we need to check that the link is valid
@@ -8,8 +9,10 @@ function playVideo {
 		link_loc="$(youtube-dl -i $qual -g --cookies /tmp/cookie.txt "$1")"
 		if [ "$link_loc" == "" ]; then
 			echo mtube: The link you entered must be incorrect.
-		else
+		elif [ "$useVLC" == "false" ]; then
 			mplayer $other -cache $cache -cache-min $mincache -cookies -cookies-file /tmp/cookie.txt $link_loc 
+		else
+			vlc $1
 		fi
 	fi
 }
